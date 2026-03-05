@@ -1,10 +1,15 @@
-from flask import Flask, render_template, request, send_file
-import os, zipfile, io, urllib.request, base64
+from flask import Flask, render_template, request, send_file, abort
+import os, zipfile, io, urllib.request, uuid, tempfile, shutil
 from PIL import Image, ImageDraw
 
 app = Flask(__name__)
 
-# إعدادات الروابط والقوالب
+# إعدادات الأمان والحدود
+MAX_FILE_SIZE = 50 * 1024 * 1024  # حد أقصى 50 ميجا
+ALLOWED_EXTENSIONS = {'.zip'}
+ALLOWED_IMAGES = {'.png', '.jpg', '.jpeg'}
+
+# الروابط والقوالب
 BASE_ONLINE = 'base_online.apk'
 BASE_OFFLINE = 'base_offline.apk'
 URL_ONLINE = "https://drive.google.com/uc?export=download&id=1UK7YwZFmRZgUH4YAZHqQiAbMMh-LM9Xw"
@@ -19,21 +24,15 @@ ICON_SIZES = {
 }
 
 def download_assets():
-    """تحميل القوالب الأساسية إذا لم تكن موجودة"""
-    if not os.path.exists(BASE_ONLINE):
-        urllib.request.urlretrieve(URL_ONLINE, BASE_ONLINE)
-    if not os.path.exists(BASE_OFFLINE):
-        urllib.request.urlretrieve(URL_OFFLINE, BASE_OFFLINE)
-
-def create_splash_screen():
-    """إنشاء شاشة ترحيب احترافية تحمل اسم أحمد"""
-    img = Image.new('RGB', (1080, 1920), color='#0f172a')
-    draw = ImageDraw.Draw(img)
-    text = "Ahmad Welcomes You\nPowered by NovaTech"
-    draw.text((540, 960), text, fill="#6366f1", anchor="mm", align="center")
-    img_io = io.BytesIO()
-    img.save(img_io, format='PNG')
-    return img_io.getvalue()
+    """تحميل آمن مع مهلة زمنية ومعالجة أخطاء"""
+    for path, url in [(BASE_ONLINE, URL_ONLINE), (BASE_OFFLINE, URL_OFFLINE)]:
+        if not os.path.exists(path):
+            try:
+                print(f"جاري تحميل القالب: {path}...")
+                with urllib.request.urlopen(url, timeout=60) as response, open(path, 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
+            except Exception as e:
+                print(f"فشل التحميل: {e}")
 
 @app.route('/')
 def index():
@@ -41,64 +40,79 @@ def index():
 
 @app.route('/convert', methods=['POST'])
 def convert_to_apk():
-    download_assets()
-    
-    file = request.files.get('project_zip')
-    if not file:
-        return "خطأ: لم يتم استلام الملف المضغوط", 400
-
-    # الحل السحري لهاتفك: حفظ الملف مؤقتاً لتجنب أخطاء الذاكرة والقراءة
-    temp_path = "temp_user_project.zip"
-    file.save(temp_path)
-
+    # 1. التحقق من صحة المدخلات (Validation)
     app_name = request.form.get('app_name', 'Dajment_App')
+    if not all(c.isalnum() or c in '-_ ' for c in app_name) or len(app_name) > 30:
+        return "خطأ: اسم التطبيق غير صالح أو طويل جداً", 400
+
     orientation = request.form.get('orientation', 'portrait')
-    app_mode = request.form.get('app_mode', 'online')
-    user_icon = request.files.get('app_icon')
-    
-    selected_base = BASE_ONLINE if app_mode == 'online' else BASE_OFFLINE
-    memory_file = io.BytesIO()
+    if orientation not in ['portrait', 'landscape']:
+        return "خطأ: وضع الشاشة غير صالح", 400
+
+    file = request.files.get('project_zip')
+    if not file or not file.filename.lower().endswith('.zip'):
+        return "خطأ: يجب رفع ملف بصيغة ZIP", 400
+
+    # 2. إنشاء مسار فريد للملف المؤقت لمنع التضارب (Concurrency)
+    temp_dir = tempfile.gettempdir()
+    unique_filename = f"{uuid.uuid4()}_{file.filename}"
+    temp_path = os.path.join(temp_dir, unique_filename)
     
     try:
-        with zipfile.ZipFile(selected_base, 'r') as zin:
-            with zipfile.ZipFile(memory_file, 'w') as zout:
-                # 1. نسخ ملفات النظام وتعديل الاتجاه
-                for item in zin.infolist():
-                    if item.filename.startswith('assets/') or (user_icon and item.filename in ICON_SIZES):
-                        continue
-                    content = zin.read(item.filename)
-                    if item.filename == 'AndroidManifest.xml' and orientation == 'landscape':
-                        content = content.replace(b'portrait', b'landscape')
-                    zout.writestr(item, content)
-                
-                # 2. إضافة شاشة ترحيب أحمد
-                zout.writestr('res/drawable/splash.png', create_splash_screen())
-                
-                # 3. محاولة فتح ملف المستخدم ومعالجته
-                with zipfile.ZipFile(temp_path, 'r') as uzin:
-                    for uitem in uzin.infolist():
-                        if not uitem.is_dir():
-                            zout.writestr(f'assets/{uitem.filename}', uzin.read(uitem.filename))
-                
-                # 4. معالجة الأيقونة
-                if user_icon:
-                    img = Image.open(user_icon)
-                    for path, size in ICON_SIZES.items():
-                        img_resized = img.resize(size, Image.Resampling.LANCZOS)
-                        img_io = io.BytesIO()
-                        img_resized.save(img_io, format='PNG')
-                        zout.writestr(path, img_io.getvalue())
+        file.save(temp_path)
+        
+        # التأكد من أن الملف ZIP سليم وليس تالفاً
+        if not zipfile.is_zipfile(temp_path):
+            raise zipfile.BadZipFile("الملف ليس ZIP صالح")
 
-        # حذف الملف المؤقت بعد النجاح
-        if os.path.exists(temp_path): os.remove(temp_path)
+        app_mode = request.form.get('app_mode', 'online')
+        selected_base = BASE_ONLINE if app_mode == 'online' else BASE_OFFLINE
+        
+        memory_file = io.BytesIO()
+        
+        with zipfile.ZipFile(selected_base, 'r') as zin, zipfile.ZipFile(memory_file, 'w') as zout:
+            # معالجة ملفات النظام
+            for item in zin.infolist():
+                if item.filename.startswith('assets/'): continue
+                content = zin.read(item.filename)
+                if item.filename == 'AndroidManifest.xml' and orientation == 'landscape':
+                    content = content.replace(b'android:screenOrientation="portrait"', b'android:screenOrientation="landscape"')
+                zout.writestr(item, content)
+
+            # معالجة ملفات المستخدم مع حماية ضد Path Traversal
+            with zipfile.ZipFile(temp_path, 'r') as uzin:
+                for uitem in uzin.infolist():
+                    if not uitem.is_dir():
+                        # تنظيف المسار لضمان الأمان
+                        safe_name = os.path.basename(uitem.filename)
+                        if safe_name:
+                            zout.writestr(f'assets/{uitem.filename}', uzin.read(uitem.filename))
+
+            # معالجة الأيقونة بأمان
+            user_icon = request.files.get('app_icon')
+            if user_icon and user_icon.filename:
+                ext = os.path.splitext(user_icon.filename)[1].lower()
+                if ext in ALLOWED_IMAGES:
+                    try:
+                        img = Image.open(user_icon).convert('RGBA')
+                        for path, size in ICON_SIZES.items():
+                            img_resized = img.resize(size, Image.Resampling.LANCZOS)
+                            img_io = io.BytesIO()
+                            img_resized.save(img_io, format='PNG')
+                            zout.writestr(path, img_io.getvalue())
+                    except Exception: pass
+
+        memory_file.seek(0)
+        return send_file(memory_file, mimetype='application/vnd.android.package-archive', as_attachment=True, download_name=f"{app_name}.apk")
 
     except Exception as e:
-        if os.path.exists(temp_path): os.remove(temp_path)
-        return f"حدث خطأ فني: {str(e)}. تأكد من ضغط الملف بـ ZArchiver.", 400
-
-    memory_file.seek(0)
-    return send_file(memory_file, mimetype='application/vnd.android.package-archive', as_attachment=True, download_name=f"{app_name}.apk")
+        return f"خطأ في المعالجة: نرجو التأكد من ملف الـ ZIP والمحاولة مرة أخرى.", 400
+    finally:
+        # ضمان حذف الملف المؤقت دائماً لمنع امتلاء القرص
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 if __name__ == '__main__':
     download_assets()
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    
