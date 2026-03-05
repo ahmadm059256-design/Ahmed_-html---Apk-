@@ -11,10 +11,8 @@ app = Flask(__name__)
 BASE_ONLINE = 'base_online.apk'
 BASE_OFFLINE = 'base_offline.apk'
 
-# --- تنبيه هام يا أحمد ---
-# استبدل الروابط أدناه بروابط التحميل المباشرة التي حصلت عليها من Google Drive
-URL_ONLINE = "ضع_رابط_الأونلاين_المباشر_هنا"
-URL_OFFLINE = "ضع_رابط_الأوفلاين_المباشر_هنا"
+URL_ONLINE = "https://drive.google.com/uc?export=download&id=1UK7YwZFmRZgUH4YAZHqQiAbMMh-LM9Xw"
+URL_OFFLINE = "https://drive.google.com/uc?export=download&id=1K80V2MYCMexHh8I4svD2AFAMUZaHnh4T"
 
 # إعدادات أيقونات أندرويد القياسية
 ICON_SIZES = {
