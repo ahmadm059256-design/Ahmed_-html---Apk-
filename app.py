@@ -40,7 +40,6 @@ def index():
 
 @app.route('/convert', methods=['POST'])
 def convert_to_apk():
-    # التأكد من وجود القوالب قبل البدء
     download_assets()
     
     if 'project_zip' not in request.files:
@@ -52,31 +51,25 @@ def convert_to_apk():
     app_mode = request.form.get('app_mode', 'online')
     selected_base = BASE_ONLINE if app_mode == 'online' else BASE_OFFLINE
 
-    # قراءة الملف في الذاكرة لتجاوز مشاكل متصفحات الأندرويد
     zip_data = io.BytesIO(user_zip_file.read())
     memory_file = io.BytesIO()
     
     try:
-        # البدء في بناء الـ APK الجديد
         with zipfile.ZipFile(selected_base, 'r') as zin:
             with zipfile.ZipFile(memory_file, 'w') as zout:
-                # 1. نسخ هيكل النظام الأساسي
                 for item in zin.infolist():
-                    # تخطي مجلد assets والأيقونات لاستبدالها
                     if item.filename.startswith('assets/') or (user_icon and item.filename in ICON_SIZES):
                         continue
                     zout.writestr(item, zin.read(item.filename))
                 
-                # 2. حقن ملفات مشروع المستخدم (تجاهل الأخطاء الطفيفة في صيغة الـ ZIP)
                 try:
                     with zipfile.ZipFile(zip_data, 'r') as uzin:
                         for uitem in uzin.infolist():
                             if not uitem.is_dir():
                                 zout.writestr(f'assets/{uitem.filename}', uzin.read(uitem.filename))
                 except Exception:
-                    return "خطأ: الملف المرفوع غير صالح. تأكد من ضغطه بصيغة .zip باستخدام تطبيق ZArchiver وتسميته بالإنجليزية.", 400
+                    return "خطأ: الملف المرفوع غير صالح. تأكد من ضغطه بصيغة .zip وتسميته بالإنجليزية.", 400
                 
-                # 3. معالجة وتغيير الأيقونات برمجياً
                 if user_icon:
                     img = Image.open(user_icon)
                     for path, size in ICON_SIZES.items():
@@ -100,3 +93,4 @@ if __name__ == '__main__':
     download_assets()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+    
