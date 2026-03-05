@@ -15,7 +15,7 @@ BASE_OFFLINE = 'base_offline.apk'
 URL_ONLINE = "https://drive.google.com/uc?export=download&id=1UK7YwZFmRZgUH4YAZHqQiAbMMh-LM9Xw"
 URL_OFFLINE = "https://drive.google.com/uc?export=download&id=1K80V2MYCMexHh8I4svD2AFAMUZaHnh4T"
 
-# إعدادات الأيقونات
+# إعدادات الأيقونات القياسية لأندرويد
 ICON_SIZES = {
     'res/mipmap-mdpi/ic_launcher.png': (48, 48),
     'res/mipmap-hdpi/ic_launcher.png': (72, 72),
@@ -25,13 +25,13 @@ ICON_SIZES = {
 }
 
 def download_assets():
-    """تحميل القوالب الكبيرة إذا لم تكن موجودة"""
+    """تحميل القوالب الكبيرة من الروابط الخارجية إذا لم تكن موجودة"""
     if not os.path.exists(BASE_ONLINE):
-        print("جاري جلب قالب الأونلاين...")
+        print("جاري جلب قالب الأونلاين (70MB)...")
         urllib.request.urlretrieve(URL_ONLINE, BASE_ONLINE)
     
     if not os.path.exists(BASE_OFFLINE):
-        print("جاري جلب قالب الأوفلاين...")
+        print("جاري جلب قالب الأوفلاين (70MB)...")
         urllib.request.urlretrieve(URL_OFFLINE, BASE_OFFLINE)
 
 @app.route('/')
@@ -40,6 +40,7 @@ def index():
 
 @app.route('/convert', methods=['POST'])
 def convert_to_apk():
+    # التأكد من وجود القوالب قبل البدء
     download_assets()
     
     if 'project_zip' not in request.files:
@@ -51,30 +52,31 @@ def convert_to_apk():
     app_mode = request.form.get('app_mode', 'online')
     selected_base = BASE_ONLINE if app_mode == 'online' else BASE_OFFLINE
 
-    # حل مشكلة ملفات أندرويد: قراءة الملف في الذاكرة أولاً
+    # قراءة الملف في الذاكرة لتجاوز مشاكل متصفحات الأندرويد
     zip_data = io.BytesIO(user_zip_file.read())
     memory_file = io.BytesIO()
     
     try:
-        # فحص جودة ملف الـ ZIP المرفوع
-        if not zipfile.is_zipfile(zip_data):
-            return "خطأ: الملف المرفوع ليس ملف ZIP صالح. تأكد من ضغطه باستخدام تطبيق ZArchiver", 400
-            
+        # البدء في بناء الـ APK الجديد
         with zipfile.ZipFile(selected_base, 'r') as zin:
             with zipfile.ZipFile(memory_file, 'w') as zout:
-                # 1. نسخ ملفات النظام الأساسية للـ APK
+                # 1. نسخ هيكل النظام الأساسي
                 for item in zin.infolist():
+                    # تخطي مجلد assets والأيقونات لاستبدالها
                     if item.filename.startswith('assets/') or (user_icon and item.filename in ICON_SIZES):
                         continue
                     zout.writestr(item, zin.read(item.filename))
                 
-                # 2. حقن ملفات مشروع المستخدم داخل مجلد assets
-                with zipfile.ZipFile(zip_data, 'r') as uzin:
-                    for uitem in uzin.infolist():
-                        if not uitem.is_dir():
-                            zout.writestr(f'assets/{uitem.filename}', uzin.read(uitem.filename))
+                # 2. حقن ملفات مشروع المستخدم (تجاهل الأخطاء الطفيفة في صيغة الـ ZIP)
+                try:
+                    with zipfile.ZipFile(zip_data, 'r') as uzin:
+                        for uitem in uzin.infolist():
+                            if not uitem.is_dir():
+                                zout.writestr(f'assets/{uitem.filename}', uzin.read(uitem.filename))
+                except Exception:
+                    return "خطأ: الملف المرفوع غير صالح. تأكد من ضغطه بصيغة .zip باستخدام تطبيق ZArchiver وتسميته بالإنجليزية.", 400
                 
-                # 3. تعديل الأيقونات برمجياً إذا تم رفع صورة
+                # 3. معالجة وتغيير الأيقونات برمجياً
                 if user_icon:
                     img = Image.open(user_icon)
                     for path, size in ICON_SIZES.items():
@@ -84,7 +86,7 @@ def convert_to_apk():
                         zout.writestr(path, img_io.getvalue())
 
     except Exception as e:
-        return f"حدث خطأ أثناء البناء: {str(e)}", 500
+        return f"حدث خطأ داخلي أثناء البناء: {str(e)}", 500
 
     memory_file.seek(0)
     return send_file(
