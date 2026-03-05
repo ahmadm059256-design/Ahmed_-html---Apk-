@@ -1,7 +1,5 @@
 from flask import Flask, render_template, request, send_file
-import os, zipfile, io, urllib.request, shutil
-
-app = Flask(__name__)
+import os, zipfile, io, requests, uuid
 
 # روابط القوالب (تأكد من أن الروابط تسمح بالتحميل المباشر)
 URL_ONLINE = "https://drive.google.com/uc?export=download&id=1UK7YwZFmRZgUH4YAZHqQiAbMMh-LM9Xw"
