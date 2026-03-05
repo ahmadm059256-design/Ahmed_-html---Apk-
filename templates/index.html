@@ -6,142 +6,55 @@
     <title>Dajment Pro | NovaTech</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #6366f1;
-            --secondary: #a855f7;
-            --bg-dark: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Cairo', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 450px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            background: linear-gradient(45deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 2.5rem;
-            margin: 0;
-        }
-
-        .tagline {
-            color: var(--text-dim);
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #cbd5e1;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            border: 2px solid #334155;
-            background: #0f172a;
-            color: white;
-            box-sizing: border-box;
-            transition: border-color 0.3s;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .btn {
-            background: linear-gradient(45deg, var(--primary), var(--secondary));
-            color: white;
-            border: none;
-            padding: 15px;
-            width: 100%;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-top: 10px;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .features-note {
-            background: rgba(99, 102, 241, 0.1);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            color: var(--text-dim);
-            margin-top: 20px;
-            border-right: 4px solid var(--primary);
-        }
-
-        .footer-text {
-            text-align: center;
-            font-size: 12px;
-            margin-top: 20px;
-            color: #64748b;
-        }
+        :root { --p: #6366f1; --s: #a855f7; --bg: #0f172a; --c: #1e293b; }
+        body { background: var(--bg); color: #fff; font-family: 'Cairo', sans-serif; display: flex; justify-content: center; padding: 20px; }
+        .card { background: var(--c); padding: 30px; border-radius: 20px; width: 100%; max-width: 450px; border: 1px solid rgba(255,255,255,0.1); }
+        h1 { text-align: center; background: linear-gradient(to left, var(--p), var(--s)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .field { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 14px; color: #94a3b8; }
+        input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: #fff; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; background: linear-gradient(45deg, var(--p), var(--s)); color: #fff; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .note { font-size: 11px; color: #64748b; margin-top: 15px; border-right: 3px solid var(--p); padding-right: 10px; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="header">
-        <h1>Dajment Pro</h1>
-        <div class="tagline">بواسطة NovaTech للتكنولوجيا والابتكار 🚀</div>
+    <div class="card">
+        <h1>Dajment Pro 🚀</h1>
+        <form action="/convert" method="POST" enctype="multipart/form-data">
+            <div class="field">
+                <label>اسم التطبيق:</label>
+                <input type="text" name="app_name" placeholder="مثلاً: مشروعي الذكي" required>
+            </div>
+            <div class="field">
+                <label>ملف المشروع (ZIP):</label>
+                <input type="file" name="project_zip" accept=".zip" required>
+            </div>
+            <div class="field">
+                <label>أيقونة التطبيق (PNG):</label>
+                <input type="file" name="app_icon" accept="image/png">
+            </div>
+            <div class="field">
+                <label>الوضع الافتراضي:</label>
+                <select name="orientation">
+                    <option value="portrait">عمودي (Portrait)</option>
+                    <option value="landscape">أفقي (Landscape)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>نوع التطبيق:</label>
+                <select name="app_mode">
+                    <option value="offline">يعمل بدون إنترنت (Offline)</option>
+                    <option value="online">متصل بالإنترنت (Online)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn">بدء التحويل الآن</button>
+        </form>
+        <div class="note">
+            بواسطة NovaTech - جميع الحقوق محفوظة 2026.
+        </div>
     </div>
-
-    <form action="/convert" method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-            <label>اسم التطبيق الخاص بك:</label>
-            <input type="text" name="app_name" placeholder="أدخل اسم التطبيق" required>
-        </div>
-
-        <div class="form-group">
-            <label>ملف المشروع (ZIP):</label>
-            <input type="file" name="project_zip" accept=".zip" required>
-        </div>
-
-        <div class="form-group">
-            <label>وضع الشاشة الافتراضي:</label>
-            <select name="orientation">
-                <option value="portrait">عمودي (Portrait) - للمواقع</option>
+</body>
+</html>
                 <option value="landscape">أفقي (Landscape) - للألعاب</option>
             </select>
         </div>
