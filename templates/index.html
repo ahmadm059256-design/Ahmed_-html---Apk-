@@ -8,204 +8,171 @@
     <style>
         :root {
             --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --bg: #0f172a;
-            --card: #1e293b;
-            --text: #f8fafc;
-            --muted: #94a3b8;
-            --accent: #10b981;
+            --secondary: #a855f7;
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
         }
 
         body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             font-family: 'Cairo', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            margin: 0;
             padding: 20px;
         }
 
         .container {
-            background-color: var(--card);
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
             width: 100%;
-            max-width: 500px;
-            padding: 40px;
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 450px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        header {
+        .header {
             text-align: center;
-            margin-bottom: 35px;
+            margin-bottom: 30px;
         }
 
-        .logo {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(to right, #818cf8, #c084fc);
+        h1 {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            font-size: 2.5rem;
             margin: 0;
         }
 
         .tagline {
-            color: var(--muted);
-            font-size: 0.95rem;
-            margin-top: 8px;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-top: 5px;
         }
 
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         label {
             display: block;
-            margin-bottom: 10px;
-            font-weight: 600;
-            color: #e2e8f0;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #cbd5e1;
         }
 
-        input[type="text"], 
-        input[type="file"] {
+        input, select {
             width: 100%;
-            padding: 12px 16px;
-            background: #334155;
-            border: 2px solid #475569;
-            border-radius: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #334155;
+            background: #0f172a;
             color: white;
-            font-size: 1rem;
             box-sizing: border-box;
-            transition: all 0.3s ease;
+            transition: border-color 0.3s;
         }
 
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: var(--primary);
-            background: #1e293b;
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
         }
 
-        /* تنسيق خيارات الراديو (Online/Offline) */
-        .mode-selector {
-            display: flex;
-            gap: 15px;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 15px;
-            border-radius: 12px;
-            margin-top: 5px;
-        }
-
-        .radio-option {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        .radio-option input {
-            margin-left: 8px;
-            accent-color: var(--primary);
-            width: 18px;
-            height: 18px;
-        }
-
-        .help-text {
-            font-size: 0.8rem;
-            color: var(--muted);
-            margin-top: 6px;
-            display: block;
-        }
-
-        button {
-            width: 100%;
-            background: linear-gradient(45deg, var(--primary), #a855f7);
+        .btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
             color: white;
             border: none;
-            padding: 16px;
-            border-radius: 14px;
-            font-size: 1.2rem;
-            font-weight: 700;
+            padding: 15px;
+            width: 100%;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
         }
 
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.5);
+        .btn:active {
+            transform: scale(0.98);
         }
 
-        button:active {
-            transform: translateY(0);
+        .features-note {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 20px;
+            border-right: 4px solid var(--primary);
         }
 
-        .footer {
+        .footer-text {
             text-align: center;
-            margin-top: 30px;
-            font-size: 0.8rem;
-            color: var(--muted);
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            padding-top: 20px;
-        }
-
-        .footer b {
-            color: var(--primary);
+            font-size: 12px;
+            margin-top: 20px;
+            color: #64748b;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <header>
-        <h1 class="logo">Dajment Pro</h1>
-        <p class="tagline">منصة NovaTech لتحويل الويب إلى تطبيقات 🚀</p>
-    </header>
+    <div class="header">
+        <h1>Dajment Pro</h1>
+        <div class="tagline">بواسطة NovaTech للتكنولوجيا والابتكار 🚀</div>
+    </div>
 
-    <form action="/convert" method="post" enctype="multipart/form-data">
-        
+    <form action="/convert" method="POST" enctype="multipart/form-data">
         <div class="form-group">
-            <label>اسم التطبيق:</label>
-            <input type="text" name="app_name" placeholder="مثلاً: تطبيق ألعابي" required>
+            <label>اسم التطبيق الخاص بك:</label>
+            <input type="text" name="app_name" placeholder="أدخل اسم التطبيق" required>
         </div>
 
         <div class="form-group">
             <label>ملف المشروع (ZIP):</label>
             <input type="file" name="project_zip" accept=".zip" required>
-            <span class="help-text">* يجب أن يحتوي الملف على index.html في المجلد الرئيسي.</span>
         </div>
 
         <div class="form-group">
-            <label>أيقونة التطبيق (صورة):</label>
+            <label>وضع الشاشة الافتراضي:</label>
+            <select name="orientation">
+                <option value="portrait">عمودي (Portrait) - للمواقع</option>
+                <option value="landscape">أفقي (Landscape) - للألعاب</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>وضع الاتصال:</label>
+            <select name="app_mode">
+                <option value="online">متصل بالإنترنت (Online)</option>
+                <option value="offline">يعمل بدون إنترنت (Offline)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>أيقونة التطبيق (Logo):</label>
             <input type="file" name="app_icon" accept="image/*">
-            <span class="help-text">* سيتم تحويل الصورة تلقائياً لأيقونة أندرويد.</span>
-        </div>
-<select name="orientation">
-        <div class="form-group">
-            <label>نوع التطبيق (الاتصال):</label>
-            <div class="mode-selector">
-                <label class="radio-option">
-                    <input type="radio" name="app_mode" value="online" checked> متصل (Online)
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="app_mode" value="offline"> بدون إنترنت (Offline)
-                </label>
-            </div>
-            <span class="help-text">* وضع الأوفلاين يزيل أذونات الإنترنت لزيادة الأمان.</span>
         </div>
 
-        <button type="submit">بدء البناء وتوليد APK</button>
+        <button type="submit" class="btn">تحويل إلى APK الآن</button>
     </form>
-    
-    <div class="footer">
-        طُور بكل فخر بواسطة المبرمج <b>أحمد عيد</b><br>
-        جميع الحقوق محفوظة لـ <span>NovaTech 2026</span>
+
+    <div class="features-note">
+        ✨ ميزات مدمجة تلقائياً:<br>
+        • شاشة ترحيب (Splash Screen) باسم "أحمد".<br>
+        • نظام تشفير NovaTech لحماية الأكواد.<br>
+        • ضغط الملفات لتقليل حجم التطبيق.
+    </div>
+
+    <div class="footer-text">
+        جميع الحقوق محفوظة لشركة NovaTech © 2026
     </div>
 </div>
 
 </body>
-          </html>
-          
+</html>
