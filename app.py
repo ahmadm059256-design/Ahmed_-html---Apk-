@@ -7,14 +7,15 @@ from PIL import Image
 
 app = Flask(__name__)
 
-# أسماء الملفات التي سيستخدمها السيرفر محلياً
+# أسماء الملفات التي سيتم إنشاؤها على السيرفر
 BASE_ONLINE = 'base_online.apk'
 BASE_OFFLINE = 'base_offline.apk'
 
+# الروابط المباشرة لملفاتك من Google Drive
 URL_ONLINE = "https://drive.google.com/uc?export=download&id=1UK7YwZFmRZgUH4YAZHqQiAbMMh-LM9Xw"
 URL_OFFLINE = "https://drive.google.com/uc?export=download&id=1K80V2MYCMexHh8I4svD2AFAMUZaHnh4T"
 
-# إعدادات أيقونات أندرويد القياسية
+# إعدادات الأيقونات
 ICON_SIZES = {
     'res/mipmap-mdpi/ic_launcher.png': (48, 48),
     'res/mipmap-hdpi/ic_launcher.png': (72, 72),
@@ -24,13 +25,13 @@ ICON_SIZES = {
 }
 
 def download_assets():
-    """تحميل القوالب الكبيرة من الروابط الخارجية إذا لم تكن موجودة"""
-    if not os.path.exists(BASE_ONLINE) and URL_ONLINE.startswith("http"):
-        print("جاري جلب قالب الأونلاين (70MB)...")
+    """تحميل القوالب الكبيرة إذا لم تكن موجودة"""
+    if not os.path.exists(BASE_ONLINE):
+        print("جاري جلب قالب الأونلاين...")
         urllib.request.urlretrieve(URL_ONLINE, BASE_ONLINE)
     
-    if not os.path.exists(BASE_OFFLINE) and URL_OFFLINE.startswith("http"):
-        print("جاري جلب قالب الأوفلاين (70MB)...")
+    if not os.path.exists(BASE_OFFLINE):
+        print("جاري جلب قالب الأوفلاين...")
         urllib.request.urlretrieve(URL_OFFLINE, BASE_OFFLINE)
 
 @app.route('/')
@@ -39,41 +40,41 @@ def index():
 
 @app.route('/convert', methods=['POST'])
 def convert_to_apk():
-    # التأكد من وجود القوالب قبل المعالجة
     download_assets()
     
     if 'project_zip' not in request.files:
-        return "خطأ: يرجى رفع ملف المشروع بصيغة ZIP", 400
+        return "خطأ: يرجى رفع ملف المشروع", 400
 
     user_zip_file = request.files['project_zip']
     new_app_name = request.form.get('app_name', 'Dajment_App')
     user_icon = request.files.get('app_icon')
-    
-    # تحديد الوضع (أونلاين أو أوفلاين)
     app_mode = request.form.get('app_mode', 'online')
     selected_base = BASE_ONLINE if app_mode == 'online' else BASE_OFFLINE
 
-    if not os.path.exists(selected_base):
-        return "السيرفر ما زال يجهز الملفات الكبيرة، جرب بعد دقيقة", 503
-
+    # حل مشكلة ملفات أندرويد: قراءة الملف في الذاكرة أولاً
+    zip_data = io.BytesIO(user_zip_file.read())
     memory_file = io.BytesIO()
     
     try:
+        # فحص جودة ملف الـ ZIP المرفوع
+        if not zipfile.is_zipfile(zip_data):
+            return "خطأ: الملف المرفوع ليس ملف ZIP صالح. تأكد من ضغطه باستخدام تطبيق ZArchiver", 400
+            
         with zipfile.ZipFile(selected_base, 'r') as zin:
             with zipfile.ZipFile(memory_file, 'w') as zout:
-                # 1. نسخ ملفات النظام الأساسية
+                # 1. نسخ ملفات النظام الأساسية للـ APK
                 for item in zin.infolist():
                     if item.filename.startswith('assets/') or (user_icon and item.filename in ICON_SIZES):
                         continue
                     zout.writestr(item, zin.read(item.filename))
                 
-                # 2. حقن ملفات مشروع المستخدم داخل assets
-                with zipfile.ZipFile(user_zip_file, 'r') as uzin:
+                # 2. حقن ملفات مشروع المستخدم داخل مجلد assets
+                with zipfile.ZipFile(zip_data, 'r') as uzin:
                     for uitem in uzin.infolist():
                         if not uitem.is_dir():
                             zout.writestr(f'assets/{uitem.filename}', uzin.read(uitem.filename))
                 
-                # 3. تعديل الأيقونات برمجياً
+                # 3. تعديل الأيقونات برمجياً إذا تم رفع صورة
                 if user_icon:
                     img = Image.open(user_icon)
                     for path, size in ICON_SIZES.items():
@@ -87,15 +88,13 @@ def convert_to_apk():
 
     memory_file.seek(0)
     return send_file(
-        memory_file,
-        mimetype='application/vnd.android.package-archive',
-        as_attachment=True,
+        memory_file, 
+        mimetype='application/vnd.android.package-archive', 
+        as_attachment=True, 
         download_name=f"{new_app_name}.apk"
     )
 
 if __name__ == '__main__':
-    # تشغيل السيرفر وتجهيز الملفات
     download_assets()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-    
